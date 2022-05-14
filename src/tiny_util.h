@@ -1,6 +1,10 @@
 #ifndef _TINY_UTIL_H
 #define _TINY_UTIL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Type for float point operation.
 // Can be float or double
 #define FTYPE double
@@ -17,5 +21,9 @@ FTYPE Fabs(FTYPE r);
 FTYPE Fsqrt(FTYPE b);
 
 FTYPE Fpow(FTYPE x, unsigned int a);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

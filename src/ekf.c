@@ -490,10 +490,10 @@ void get_quaternion(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz) {
   *qz = Q4;
 }
 
-void get_ekf_rpy(FTYPE *yaw, FTYPE *pitch, FTYPE *roll) {
-  *yaw = atan2(2 * (Q1 * Q2 + Q3 * Q4), 1 - 2 * (Q2 * Q2 + Q3 * Q3));
+void get_ekf_rpy(FTYPE *roll, FTYPE *pitch, FTYPE *yaw) {
+  *roll = atan2(2 * (Q1 * Q2 + Q3 * Q4), 1 - 2 * (Q2 * Q2 + Q3 * Q3));
   *pitch = asin(2 * (Q1 * Q3 - Q4 * Q2));
-  *roll = atan2(2 * (Q1 * Q4 + Q2 * Q3), 1 - 2 * (Q3 * Q3 + Q4 * Q4));
+  *yaw = atan2(2 * (Q1 * Q4 + Q2 * Q3), 1 - 2 * (Q3 * Q3 + Q4 * Q4));
 }
 
 #ifdef __cplusplus

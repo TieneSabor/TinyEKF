@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-// #include "math.h"
+#include "math.h"
 #include "stdio.h"
 #include "tiny_util.h"
 
@@ -71,7 +71,7 @@ void get_gyroscope_bias(FTYPE *bx, FTYPE *by, FTYPE *bz);
 /*  */
 void get_quaternion(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz);
 
-void get_ekf_rpy(FTYPE *yaw, FTYPE *pitch, FTYPE *roll);
+void get_ekf_rpy(FTYPE *roll, FTYPE *pitch, FTYPE *yaw);
 
 // void printState(void);
 

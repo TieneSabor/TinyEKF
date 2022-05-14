@@ -34,8 +34,8 @@ void TinyEKF::Set_Observation_Noise(FTYPE Vwx, FTYPE Vwy, FTYPE Vwz, FTYPE Vq1,
   set_Observation_Noise(Vwx, Vwy, Vwz, Vq1, Vq2, Vq3, Vq4);
 }
 
-void TinyEKF::Set_References(FTYPE eax, FTYPE eay, FTYPE eaz, FTYPE emx = 0,
-                             FTYPE emy = 0, FTYPE emz = 0) {
+void TinyEKF::Set_References(FTYPE eax, FTYPE eay, FTYPE eaz, FTYPE emx,
+                             FTYPE emy, FTYPE emz) {
   switch (set_) {
   case QTN_ONLY:
     break;
@@ -58,7 +58,7 @@ void TinyEKF::EKF_update(void) {
   case AX9_ONLY:
     set_measurement(bax_, bay_, baz_, bmx_, bmy_, bmz_);
     quaternion_update();
-    get_qe_qk(&qw_, &qx_, &qy_, &qz_);
+    get_qe9_qk(&qw_, &qx_, &qy_, &qz_);
     update(wx_, wy_, wz_, qw_, qx_, qy_, qz_);
     break;
   case AX6_ONLY:
@@ -73,18 +73,20 @@ void TinyEKF::EKF_update(void) {
 void TinyEKF::Set_IMU_Measurements(FTYPE bax, FTYPE bay, FTYPE baz, FTYPE wx,
                                    FTYPE wy, FTYPE wz, FTYPE bmx, FTYPE bmy,
                                    FTYPE bmz) {
-  bax_ = bax;
-  bay_ = bay;
-  baz_ = baz;
-  bmx_ = bmx;
-  bmy_ = bmy;
-  bmz_ = bmz;
+  FTYPE normba = sqrt(pow(bax, 2) + pow(bay, 2) + pow(baz, 2));
+  bax_ = bax / normba;
+  bay_ = bay / normba;
+  baz_ = baz / normba;
+  FTYPE normbm = sqrt(pow(bmx, 2) + pow(bmy, 2) + pow(bmz, 2));
+  bmx_ = bmx / normbm;
+  bmy_ = bmy / normbm;
+  bmz_ = bmz / normbm;
   wx_ = wx;
   wy_ = wy;
   wz_ = wz;
 }
 
-void TinyEKF::Set_QTN_Measurements(FTYPE qw, FTYPE qx, FTYPE qy, FTYPE qz = 0) {
+void TinyEKF::Set_QTN_Measurements(FTYPE qw, FTYPE qx, FTYPE qy, FTYPE qz) {
   qw_ = qw;
   qx_ = qx;
   qy_ = qy;

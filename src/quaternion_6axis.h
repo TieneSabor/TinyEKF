@@ -1,6 +1,10 @@
 #ifndef _QUATERNION_ESTIMATOR_6AXIS_H
 #define _QUATERNION_ESTIMATOR_6AXIS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "math.h"
 #include "tiny_util.h"
 
@@ -14,6 +18,10 @@ void quaternion_update_QE6(void);
 
 void get_qk_QE6(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz);
 
-void get_rpy_QE6(FTYPE *yaw, FTYPE *pitch, FTYPE *roll);
+void get_rpy_QE6(FTYPE *roll, FTYPE *pitch, FTYPE *yaw);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

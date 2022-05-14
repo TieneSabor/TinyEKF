@@ -22,13 +22,13 @@ public:
   void Set_Observation_Noise(FTYPE Vwx, FTYPE Vwy, FTYPE Vwz, FTYPE Vq1,
                              FTYPE Vq2, FTYPE Vq3, FTYPE Vq4);
   void Set_References(FTYPE eax, FTYPE eay, FTYPE eaz, FTYPE emx = 0,
-                      FTYPE emy = 0, FTYPE emz = 0);
+                      FTYPE emy = 1, FTYPE emz = 0);
   // Main operations
   void EKF_predict(FTYPE dt);
   void EKF_update(void);
   // Set up Inputs
   void Set_IMU_Measurements(FTYPE bax, FTYPE bay, FTYPE baz, FTYPE wx, FTYPE wy,
-                            FTYPE wz, FTYPE bmx = 0, FTYPE bmy = 0,
+                            FTYPE wz, FTYPE bmx = 0, FTYPE bmy = 1,
                             FTYPE bmz = 0);
   void Set_QTN_Measurements(FTYPE qw, FTYPE qx, FTYPE qy, FTYPE qz = 0);
   // Get Outputs

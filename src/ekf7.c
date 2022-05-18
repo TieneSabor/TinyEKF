@@ -133,51 +133,51 @@ FTYPE ekf7_get_F(FTYPE dt, byte i, byte j) {
       res = -(FQW * 0.5);
     }
     // -qx
-    else if (((i == 5) && (j == 2))) {
+    else if (((i == 6) && (j == 1))) {
       res = -(FQX * 0.5);
     }
     // qx
-    else if (((j == 3) && (i == 0)) || ((i == 6) && (j == 1))) {
+    else if (((j == 3) && (i == 0)) || ((i == 5) && (j == 2))) {
       res = (FQX * 0.5);
     }
     // -qy
-    else if ((i == 6) && (j == 0)) {
+    else if ((i == 4) && (j == 2)) {
       res = -(FQY * 0.5);
     }
     // qy
-    else if (((i == 3) && (j == 1)) || ((i == 4) && (j == 2))) {
+    else if (((i == 3) && (j == 1)) || ((i == 6) && (j == 0))) {
       res = (FQY * 0.5);
     }
     // -qz
-    else if ((i == 4) && (j == 1)) {
+    else if ((i == 5) && (j == 0)) {
       res = -(FQZ * 0.5);
     }
     // qz
-    else if (((i == 3) && (j == 2)) || ((i == 5) && (j == 0))) {
+    else if (((i == 3) && (j == 2)) || ((i == 4) && (j == 1))) {
       res = (FQZ * 0.5);
     }
     // wx-bx
-    else if (((i == 4) && (j == 3)) || ((i == 6) && (j == 5))) {
+    else if (((i == 4) && (j == 3)) || ((i == 5) && (j == 6))) {
       res = ((FWX - FBX) * 0.5);
     }
     // bx-wx
-    else if (((i == 3) && (j == 4)) || ((i == 5) && (j == 6))) {
+    else if (((i == 3) && (j == 4)) || ((i == 6) && (j == 5))) {
       res = ((FBX - FWX) * 0.5);
     }
     // wy-by
-    else if (((i == 4) && (j == 6)) || ((i == 5) && (j == 3))) {
+    else if (((i == 6) && (j == 4)) || ((i == 5) && (j == 3))) {
       res = ((FWY - FBY) * 0.5);
     }
     // by-wy
-    else if (((i == 6) && (j == 4)) || ((i == 3) && (j == 5))) {
+    else if (((i == 4) && (j == 6)) || ((i == 3) && (j == 5))) {
       res = ((FBY - FWY) * 0.5);
     }
     // wz-bz
-    else if (((i == 5) && (j == 4)) || ((i == 6) && (j == 3))) {
+    else if (((i == 4) && (j == 5)) || ((i == 6) && (j == 3))) {
       res = ((FWZ - FBZ) * 0.5);
     }
     // bz-wz
-    else if (((i == 4) && (j == 5)) || ((i == 3) && (j == 6))) {
+    else if (((i == 5) && (j == 4)) || ((i == 3) && (j == 6))) {
       res = ((FBZ - FWZ) * 0.5);
     }
     // others are 0
@@ -402,11 +402,11 @@ void ekf7_predict(FTYPE dt, FTYPE wx, FTYPE wy, FTYPE wz,
   FTYPE nqw =
       QW + 0.5 * dt * (-(wx - BX) * QX - (wy - BY) * QY - (wz - BZ) * QZ);
   FTYPE nqx =
-      QX + 0.5 * dt * ((wx - BX) * QW - (wz - BZ) * QY + (wy - BY) * QZ);
+      QX + 0.5 * dt * ((wx - BX) * QW + (wz - BZ) * QY - (wy - BY) * QZ);
   FTYPE nqy =
-      QY + 0.5 * dt * ((wy - BY) * QW + (wz - BZ) * QX - (wx - BX) * QZ);
+      QY + 0.5 * dt * ((wy - BY) * QW - (wz - BZ) * QX + (wx - BX) * QZ);
   FTYPE nqz =
-      QZ + 0.5 * dt * ((wz - BZ) * QW - (wy - BY) * QX + (wx - BX) * QY);
+      QZ + 0.5 * dt * ((wz - BZ) * QW + (wy - BY) * QX - (wx - BX) * QY);
   FTYPE norm = sqrt(pow(nqw, 2) + pow(nqx, 2) + pow(nqy, 2) + pow(nqz, 2));
   // FTYPE norm = 1;
   QW = nqw / norm;

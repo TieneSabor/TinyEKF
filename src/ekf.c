@@ -116,51 +116,51 @@ FTYPE get_F(FTYPE dt, byte i, byte j) {
     res = (ekf_space_[3] * 0.5);
   }
   // q2
-  else if ((j == 8) && (i == 2)) {
+  else if ((j == 9) && (i == 1)) {
     res = (ekf_space_[4] * 0.5);
   }
   // -q2
-  else if (((i == 6) && (j == 0)) || ((i == 9) && (j == 1))) {
+  else if (((i == 6) && (j == 0)) || ((i == 8) && (j == 2))) {
     res = -(ekf_space_[4] * 0.5);
   }
   // q3
-  else if ((i == 9) && (j == 0)) {
+  else if ((i == 7) && (j == 2)) {
     res = (ekf_space_[5] * 0.5);
   }
   // -q3
-  else if (((i == 6) && (j == 1)) || ((i == 7) && (j == 2))) {
+  else if (((i == 6) && (j == 1)) || ((i == 9) && (j == 0))) {
     res = -(ekf_space_[5] * 0.5);
   }
   // q4
-  else if ((i == 7) && (j == 1)) {
+  else if ((i == 8) && (j == 0)) {
     res = (ekf_space_[6] * 0.5);
   }
   // -q4
-  else if (((i == 6) && (j == 2)) || ((i == 8) && (j == 0))) {
+  else if (((i == 6) && (j == 2)) || ((i == 7) && (j == 1))) {
     res = -(ekf_space_[6] * 0.5);
   }
   // wx
-  else if (((i == 7) && (j == 6)) || ((i == 9) && (j == 8))) {
+  else if (((i == 7) && (j == 6)) || ((i == 8) && (j == 9))) {
     res = (ekf_space_[7] * 0.5);
   }
   // -wx
-  else if (((i == 6) && (j == 7)) || ((i == 8) && (j == 9))) {
+  else if (((i == 6) && (j == 7)) || ((i == 9) && (j == 8))) {
     res = -(ekf_space_[7] * 0.5);
   }
   // wy
-  else if (((i == 7) && (j == 9)) || ((i == 8) && (j == 6))) {
+  else if (((i == 9) && (j == 7)) || ((i == 8) && (j == 6))) {
     res = (ekf_space_[8] * 0.5);
   }
   // -wy
-  else if (((i == 9) && (j == 7)) || ((i == 6) && (j == 8))) {
+  else if (((i == 7) && (j == 9)) || ((i == 6) && (j == 8))) {
     res = -(ekf_space_[8] * 0.5);
   }
   // wz
-  else if (((i == 8) && (j == 7)) || ((i == 9) && (j == 6))) {
+  else if (((i == 7) && (j == 8)) || ((i == 9) && (j == 6))) {
     res = (ekf_space_[9] * 0.5);
   }
   // -wz
-  else if (((i == 7) && (j == 8)) || ((i == 6) && (j == 9))) {
+  else if (((i == 8) && (j == 7)) || ((i == 6) && (j == 9))) {
     res = -(ekf_space_[9] * 0.5);
   }
   // others are 0
@@ -235,6 +235,9 @@ void ekf_init(FTYPE wx, FTYPE wy, FTYPE wz) {
   MAT(state_, 0, 0) = wx;
   MAT(state_, 1, 0) = wy;
   MAT(state_, 2, 0) = wz;
+  MAT(state_, 3, 0) = 0.03;
+  MAT(state_, 4, 0) = 0.03;
+  MAT(state_, 5, 0) = 0.03;
   MAT(state_, 6, 0) = 1; // qw = 1;
   // Initialize covariance P.
   // for (int i = 0; i < NUM_ST; i++) {
@@ -292,11 +295,11 @@ void predict(FTYPE dt) {
   set_F(0);
   // Update state.
   FTYPE nqw = MAT(state_, 6, 0) + 0.5 * dt * (-WX * Q2 - WY * Q3 - WZ * Q4);
-  FTYPE nqx = MAT(state_, 7, 0) + 0.5 * dt * (WX * Q1 - WZ * Q3 + WY * Q4);
-  FTYPE nqy = MAT(state_, 8, 0) + 0.5 * dt * (WY * Q1 + WZ * Q2 - WX * Q4);
-  FTYPE nqz = MAT(state_, 9, 0) + 0.5 * dt * (WZ * Q1 - WY * Q2 + WX * Q3);
-  // FTYPE norm = sqrt(pow(nqw, 2) + pow(nqx, 2) + pow(nqy, 2) + pow(nqz, 2));
-  FTYPE norm = 1;
+  FTYPE nqx = MAT(state_, 7, 0) + 0.5 * dt * (WX * Q1 + WZ * Q3 - WY * Q4);
+  FTYPE nqy = MAT(state_, 8, 0) + 0.5 * dt * (WY * Q1 - WZ * Q2 + WX * Q4);
+  FTYPE nqz = MAT(state_, 9, 0) + 0.5 * dt * (WZ * Q1 + WY * Q2 - WX * Q3);
+  FTYPE norm = sqrt(pow(nqw, 2) + pow(nqx, 2) + pow(nqy, 2) + pow(nqz, 2));
+  //FTYPE norm = 1;
   MAT(state_, 6, 0) = nqw / norm;
   MAT(state_, 7, 0) = nqx / norm;
   MAT(state_, 8, 0) = nqy / norm;
@@ -490,10 +493,10 @@ void get_quaternion(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz) {
   *qz = Q4;
 }
 
-void get_ekf_rpy(FTYPE *roll, FTYPE *pitch, FTYPE *yaw) {
-  *roll = atan2(2 * (Q1 * Q2 + Q3 * Q4), 1 - 2 * (Q2 * Q2 + Q3 * Q3));
+void get_ekf_rpy(FTYPE *yaw, FTYPE *pitch, FTYPE *roll) {
+  *yaw = atan2(2 * (Q1 * Q2 + Q3 * Q4), 1 - 2 * (Q2 * Q2 + Q3 * Q3));
   *pitch = asin(2 * (Q1 * Q3 - Q4 * Q2));
-  *yaw = atan2(2 * (Q1 * Q4 + Q2 * Q3), 1 - 2 * (Q3 * Q3 + Q4 * Q4));
+  *roll = atan2(2 * (Q1 * Q4 + Q2 * Q3), 1 - 2 * (Q3 * Q3 + Q4 * Q4));
 }
 
 #ifdef __cplusplus

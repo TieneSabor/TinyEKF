@@ -235,9 +235,6 @@ void ekf_init(FTYPE wx, FTYPE wy, FTYPE wz) {
   MAT(state_, 0, 0) = wx;
   MAT(state_, 1, 0) = wy;
   MAT(state_, 2, 0) = wz;
-  MAT(state_, 3, 0) = 0.03;
-  MAT(state_, 4, 0) = 0.03;
-  MAT(state_, 5, 0) = 0.03;
   MAT(state_, 6, 0) = 1; // qw = 1;
   // Initialize covariance P.
   // for (int i = 0; i < NUM_ST; i++) {

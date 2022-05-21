@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-// #define DBG_CODE
+#define DBG_CODE
 
 #ifdef DBG_CODE
 #define PRT_DBG 1
@@ -25,7 +25,7 @@ extern "C" {
 
 // Definition of important constant.
 // Should NOT be modified.
-#define SPACE_SIZE 130 // maximum matrix element number
+#define SPACE_SIZE 137 // maximum matrix element number
 #define MAX_DIM 15     // maximum matrix operation
 #define LAST4 0x0f     // 00001111
 #define NUM_ST 7       // state number
@@ -72,6 +72,7 @@ M ekf7_V_;
 M ekf7_I_;
 M ekf7_KH_;
 M ekf7_tmp_;
+M ekf7_tm2_;
 
 // Some flags for checking initialization
 byte ekf7_init_called_ = 0;
@@ -185,106 +186,6 @@ FTYPE ekf7_get_F(FTYPE dt, byte i, byte j) {
       res = 0;
     }
   }
-  /*
-  // i == 3
-  if (i == 3) {
-    switch (j) {
-    case 0:
-      res = (FQX * 0.5);
-      break;
-    case 1:
-      res = (FQY * 0.5);
-      break;
-    case 2:
-      res = (FQZ * 0.5);
-      break;
-    case 4:
-      res = ((FBX - FWX) * 0.5);
-      break;
-    case 5:
-      res = ((FBY - FWY) * 0.5);
-      break;
-    case 6:
-      res = ((FBZ - FWZ) * 0.5);
-      break;
-    default:
-      res = 0;
-      break;
-    }
-  }
-  // i == 4
-  else if (i == 4) {
-    switch (j) {
-    case 1:
-      res = -(FQZ * 0.5);
-      break;
-    case 2:
-      res = (FQY * 0.5);
-      break;
-    case 3:
-      res = ((FWX - FBX) * 0.5);
-      break;
-    case 5:
-      res = ((FBZ - FWZ) * 0.5);
-      break;
-    case 6:
-      res = ((FWY - FBY) * 0.5);
-      break;
-    default:
-      res = 0;
-      break;
-    }
-  }
-  // i == 5
-  else if (i == 5) {
-    switch (j) {
-    case 0:
-      res = (FQZ * 0.5);
-      break;
-    case 2:
-      res = -(FQX * 0.5);
-      break;
-    case 3:
-      res = ((FWY - FBY) * 0.5);
-      break;
-    case 4:
-      res = ((FWZ - FBZ) * 0.5);
-      break;
-    case 6:
-      res = ((FBX - FWX) * 0.5);
-      break;
-    default:
-      res = 0;
-      break;
-    }
-  }
-  // i == 6
-  else if (i == 6) {
-    switch (j) {
-    case 0:
-      res = -(FQY * 0.5);
-      break;
-    case 1:
-      res = (FQX * 0.5);
-      break;
-    case 3:
-      res = ((FWZ - FBZ) * 0.5);
-      break;
-    case 4:
-      res = ((FBY - FWY) * 0.5);
-      break;
-    case 5:
-      res = ((FWX - FBX) * 0.5);
-      break;
-    default:
-      res = 0;
-      break;
-    }
-  } else {
-    res = 0;
-  }
-  */
-
   // return I + Fdt
   res *= dt;
   return res;
@@ -347,6 +248,10 @@ void ekf7_init(void) {
   ekf7_tmp_.dim = SET_B(NUM_ST, 1);
   ekf7_tmp_.sps = ekf7_spscnt_;
   ekf7_spscnt_ += OCU(ekf7_tmp_);
+  // for matrix multiplation, also
+  ekf7_tm2_.dim = SET_B(NUM_ST, 1);
+  ekf7_tm2_.sps = ekf7_spscnt_;
+  ekf7_spscnt_ += OCU(ekf7_tm2_);
   printf("spscnt: %d\r\n", ekf7_spscnt_);
   // Initialize state
   MAT(ekf7_state_, 3, 0) = 1; // qw = 1;
@@ -393,8 +298,7 @@ void ekf7_set_Observation_Noise(FTYPE Vq1, FTYPE Vq2, FTYPE Vq3, FTYPE Vq4) {
   ekf7_ON_set_ = 1;
 }
 
-void ekf7_predict(FTYPE dt, FTYPE wx, FTYPE wy, FTYPE wz,
-                  char covar_update_flag) {
+void ekf7_predict(FTYPE dt, FTYPE wx, FTYPE wy, FTYPE wz) {
   // Update the Jacobian.
   ekf7_set_F(wx, wy, wz);
   // printF();
@@ -415,9 +319,9 @@ void ekf7_predict(FTYPE dt, FTYPE wx, FTYPE wy, FTYPE wz,
   QZ = nqz / norm;
   // Update the covariance
   // P = FPF^T + W
-  if (covar_update_flag == EKF7_COV_UPDATE) {
-    ekf7_covariance_predict(dt);
-  }
+  //ekf7_covariance_predict(dt);
+  ekf7_covariance_predict_v2(dt);
+  //printSyM(ekf7_covar_);
 }
 
 void ekf7_covariance_predict(FTYPE dt) {
@@ -437,6 +341,32 @@ void ekf7_covariance_predict(FTYPE dt) {
     }
     for (int j = i; j < NUM_ST; j++) {
       SYM(ekf7_covar_, i, j) = MAT(ekf7_tmp_, j, 0);
+    }
+  }
+}
+
+void ekf7_covariance_predict_v2(FTYPE dt) {
+  for (int i = 0; i < NUM_ST; i++) {
+    for (int j = 0; j < NUM_ST; j++) {
+      MAT(ekf7_tmp_, j, 0) = 0;
+      for (int k = 0; k < NUM_ST; k++) {
+        MAT(ekf7_tmp_, j, 0) +=
+            ekf7_get_F_plus_I(dt, i, k) * SYM(ekf7_covar_, k, j);
+      }
+    }
+    for (int j = i; j < NUM_ST; j++) {
+      MAT(ekf7_tm2_, j, 0) = 0;
+      for (int k = 0; k < NUM_ST; k++) {
+        MAT(ekf7_tm2_, j, 0) +=
+            SYM(ekf7_tmp_, k, 0) * ekf7_get_F_plus_I(dt, j, k);
+      }
+    }
+    for (int j = i; j < NUM_ST; j++) {
+      SYM(ekf7_covar_, i, j) = 0;
+      if (i == j) {
+        SYM(ekf7_covar_, i, j) = MAT(ekf7_W_, i, 0);
+      }
+      SYM(ekf7_covar_, i, j) += MAT(ekf7_tm2_, j, 0);
     }
   }
 }

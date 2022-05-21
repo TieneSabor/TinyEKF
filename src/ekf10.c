@@ -6,16 +6,11 @@
 #endif
 #endif
 
-#include "ekf.h"
+#include "ekf10.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct matrix {
-  byte dim; // dimision of the matrix, dim = m<<4 + n
-  byte sps; // start position in the_space
-} M;
 
 // Definition of important constant.
 // Should NOT be modified.
@@ -88,15 +83,9 @@ byte ON_set_ = 0;
 byte spscnt_;
 
 // Set linearlize transition matrix F.
-void set_F(int init) {
+void ekf10_set_F(int init) {
   if (!init_called_) {
     return;
-  }
-  if (init) {
-    // Gyroscope latency.
-    INVTAUX = -1 / TAUX;
-    INVTAUY = -1 / TAUY;
-    INVTAUZ = -1 / TAUZ;
   }
   // Set up quaternion in F
   FQ1 = Q1;
@@ -109,7 +98,7 @@ void set_F(int init) {
   FWZ = WZ;
 }
 
-FTYPE get_F(FTYPE dt, byte i, byte j) {
+FTYPE ekf10_get_F(FTYPE dt, byte i, byte j) {
   FTYPE res = 0;
   // q1
   if ((i == (j + 7)) && (i > 6)) {
@@ -172,15 +161,15 @@ FTYPE get_F(FTYPE dt, byte i, byte j) {
   return res;
 }
 
-FTYPE get_F_plus_I(FTYPE dt, byte i, byte j) {
+FTYPE ekf10_get_F_plus_I(FTYPE dt, byte i, byte j) {
   if (i == j) {
-    return 1 + get_F(dt, i, j);
+    return 1 + ekf10_get_F(dt, i, j);
   } else {
-    return get_F(dt, i, j);
+    return ekf10_get_F(dt, i, j);
   }
 }
 
-FTYPE get_H(byte i, byte j) {
+FTYPE ekf10_get_H(byte i, byte j) {
   if ((j < 3) && (i == j)) {
     return 1.0f;
   } else if ((j >= 3) && ((i + 3) == j)) {
@@ -190,7 +179,7 @@ FTYPE get_H(byte i, byte j) {
   }
 }
 
-void ekf_init(FTYPE wx, FTYPE wy, FTYPE wz) {
+void ekf10_init(FTYPE wx, FTYPE wy, FTYPE wz) {
   init_called_ = 1;
   // Fill all elements with 0
   for (int i = 0; i < SPACE_SIZE; i++) {
@@ -246,12 +235,12 @@ void ekf_init(FTYPE wx, FTYPE wy, FTYPE wz) {
     }
   }
   // Initialize Jacobian F.
-  set_F(1);
+  ekf10_set_F(1);
 }
 
-void set_Propagation_Noise(FTYPE Wwx, FTYPE Wwy, FTYPE Wwz, FTYPE Wbx,
-                           FTYPE Wby, FTYPE Wbz, FTYPE Wq1, FTYPE Wq2,
-                           FTYPE Wq3, FTYPE Wq4) {
+void ekf10_set_Propagation_Noise(FTYPE Wwx, FTYPE Wwy, FTYPE Wwz, FTYPE Wbx,
+                                 FTYPE Wby, FTYPE Wbz, FTYPE Wq1, FTYPE Wq2,
+                                 FTYPE Wq3, FTYPE Wq4) {
   if (!init_called_) {
     return;
   }
@@ -270,8 +259,8 @@ void set_Propagation_Noise(FTYPE Wwx, FTYPE Wwy, FTYPE Wwz, FTYPE Wbx,
   PN_set_ = 1;
 }
 
-void set_Observation_Noise(FTYPE Vwx, FTYPE Vwy, FTYPE Vwz, FTYPE Vq1,
-                           FTYPE Vq2, FTYPE Vq3, FTYPE Vq4) {
+void ekf10_set_Observation_Noise(FTYPE Vwx, FTYPE Vwy, FTYPE Vwz, FTYPE Vq1,
+                                 FTYPE Vq2, FTYPE Vq3, FTYPE Vq4) {
   if (!init_called_) {
     return;
   }
@@ -287,26 +276,26 @@ void set_Observation_Noise(FTYPE Vwx, FTYPE Vwy, FTYPE Vwz, FTYPE Vq1,
   ON_set_ = 1;
 }
 
-void predict(FTYPE dt) {
+void ekf10_predict(FTYPE dt) {
   // Update the Jacobian.
-  set_F(0);
+  ekf10_set_F(0);
   // Update state.
   FTYPE nqw = MAT(state_, 6, 0) + 0.5 * dt * (-WX * Q2 - WY * Q3 - WZ * Q4);
   FTYPE nqx = MAT(state_, 7, 0) + 0.5 * dt * (WX * Q1 + WZ * Q3 - WY * Q4);
   FTYPE nqy = MAT(state_, 8, 0) + 0.5 * dt * (WY * Q1 - WZ * Q2 + WX * Q4);
   FTYPE nqz = MAT(state_, 9, 0) + 0.5 * dt * (WZ * Q1 + WY * Q2 - WX * Q3);
   FTYPE norm = sqrt(pow(nqw, 2) + pow(nqx, 2) + pow(nqy, 2) + pow(nqz, 2));
-  //FTYPE norm = 1;
+  // FTYPE norm = 1;
   MAT(state_, 6, 0) = nqw / norm;
   MAT(state_, 7, 0) = nqx / norm;
   MAT(state_, 8, 0) = nqy / norm;
   MAT(state_, 9, 0) = nqz / norm;
   // Update the covariance
   // P = FPF^T + W
-  covariance_predict(dt);
+  ekf10_covariance_predict(dt);
 }
 
-void covariance_predict(FTYPE dt) {
+void ekf10_covariance_predict(FTYPE dt) {
   for (int i = 0; i < NUM_OB; i++) {
     for (int j = i; j < NUM_OB; j++) {
       MAT(tmp_, j, 0) = 0;
@@ -315,8 +304,8 @@ void covariance_predict(FTYPE dt) {
       }
       for (int k = 0; k < NUM_ST; k++) {
         for (int l = 0; l < NUM_ST; l++) {
-          MAT(tmp_, j, 0) += get_F_plus_I(dt, i, k) * SYM(covar_, k, l) *
-                             get_F_plus_I(dt, j, l);
+          MAT(tmp_, j, 0) += ekf10_get_F_plus_I(dt, i, k) * SYM(covar_, k, l) *
+                             ekf10_get_F_plus_I(dt, j, l);
         }
       }
     }
@@ -326,7 +315,7 @@ void covariance_predict(FTYPE dt) {
   }
 }
 
-void innovation_update(void) {
+void ekf10_innovation_update(void) {
   for (int i = 0; i < NUM_OB; i++) {
     for (int j = i; j < NUM_OB; j++) {
       MAT(tmp_, j, 0) = 0;
@@ -335,7 +324,8 @@ void innovation_update(void) {
       }
       for (int k = 0; k < NUM_ST; k++) {
         for (int l = 0; l < NUM_ST; l++) {
-          MAT(tmp_, j, 0) += get_H(i, k) * SYM(covar_, k, l) * get_H(j, l);
+          MAT(tmp_, j, 0) +=
+              ekf10_get_H(i, k) * SYM(covar_, k, l) * ekf10_get_H(j, l);
         }
       }
     }
@@ -346,7 +336,7 @@ void innovation_update(void) {
 }
 
 // Matrix Inversion Routine
-void innovation_invert(void) {
+void ekf10_innovation_invert(void) {
   SYM(I_, 0, 0) = 1.0f / SYM(I_, 0, 0);
   for (int i = 0; i < NUM_OB - 1; i++) {
     // w^T = -inv(A)*u^T
@@ -378,7 +368,7 @@ void innovation_invert(void) {
   return;
 }
 
-void KH_update(void) {
+void ekf10_KH_update(void) {
   for (int i = 0; i < NUM_ST; i++) {
     for (int j = 0; j < NUM_ST; j++) {
       // printf("\r\n-------- KH update (%d, %d) --------\r\n", i, j);
@@ -408,7 +398,7 @@ void KH_update(void) {
 }
 
 // P = (I-KH)P
-void covariance_update(void) {
+void ekf10_covariance_update(void) {
   // EKF_DBG("\r\n-------- Covariance --------\r\n")
   // printSyM(covar_);
   for (int i = 0; i < NUM_ST; i++) {
@@ -427,8 +417,8 @@ void covariance_update(void) {
 }
 
 // x = x + K(y-Hx) = x + KH(x_err)
-void state_update(FTYPE wx, FTYPE wy, FTYPE wz, FTYPE qw, FTYPE qx, FTYPE qy,
-                  FTYPE qz) {
+void ekf10_state_update(FTYPE wx, FTYPE wy, FTYPE wz, FTYPE qw, FTYPE qx,
+                        FTYPE qy, FTYPE qz) {
   // error
   MAT(error_, 0, 0) = wx - MAT(state_, 0, 0);
   MAT(error_, 1, 0) = wy - MAT(state_, 1, 0);
@@ -449,48 +439,48 @@ void state_update(FTYPE wx, FTYPE wy, FTYPE wz, FTYPE qw, FTYPE qx, FTYPE qy,
   }
 }
 
-void update(FTYPE wx, FTYPE wy, FTYPE wz, FTYPE qw, FTYPE qx, FTYPE qy,
-            FTYPE qz) {
+void ekf10_update(FTYPE wx, FTYPE wy, FTYPE wz, FTYPE qw, FTYPE qx, FTYPE qy,
+                  FTYPE qz) {
   // get KH:
   // EKF_DBG("\r\n-------- before update inno. --------\r\n")
   // printSyM(I_);
-  innovation_update();
+  ekf10_innovation_update();
   float bfi[7][7];
   for (int i = 0; i < NUM_OB; i++) {
     for (int j = 0; j < NUM_OB; j++) {
       bfi[i][j] = SYM(I_, i, j);
     }
   }
-  innovation_invert();
+  ekf10_innovation_invert();
   double sbe[7][7];
-  KH_update();
-  state_update(wx, wy, wz, qw, qx, qy, qz);
-  covariance_update();
+  ekf10_KH_update();
+  ekf10_state_update(wx, wy, wz, qw, qx, qy, qz);
+  ekf10_covariance_update();
 }
 
 /*  */
-void get_angular_vel(FTYPE *wx, FTYPE *wy, FTYPE *wz) {
+void ekf10_get_angular_vel(FTYPE *wx, FTYPE *wy, FTYPE *wz) {
   *wx = WX;
   *wy = WY;
   *wz = WZ;
 }
 
 /*  */
-void get_gyroscope_bias(FTYPE *bx, FTYPE *by, FTYPE *bz) {
+void ekf10_get_gyroscope_bias(FTYPE *bx, FTYPE *by, FTYPE *bz) {
   *bx = MAT(state_, 3, 0);
   *by = MAT(state_, 4, 0);
   *bz = MAT(state_, 5, 0);
 }
 
 /*  */
-void get_quaternion(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz) {
+void ekf10_get_quaternion(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz) {
   *qw = Q1;
   *qx = Q2;
   *qy = Q3;
   *qz = Q4;
 }
 
-void get_ekf_rpy(FTYPE *yaw, FTYPE *pitch, FTYPE *roll) {
+void ekf10_get_rpy(FTYPE *yaw, FTYPE *pitch, FTYPE *roll) {
   *yaw = atan2(2 * (Q1 * Q2 + Q3 * Q4), 1 - 2 * (Q2 * Q2 + Q3 * Q3));
   *pitch = asin(2 * (Q1 * Q3 - Q4 * Q2));
   *roll = atan2(2 * (Q1 * Q4 + Q2 * Q3), 1 - 2 * (Q3 * Q3 + Q4 * Q4));

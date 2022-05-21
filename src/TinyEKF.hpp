@@ -3,7 +3,7 @@
 
 #include "math.h"
 
-#include <ekf.h>
+#include <ekf10.h>
 #include <quaternion_6axis.h>
 #include <quaternion_9axis.h>
 

@@ -13,17 +13,6 @@ extern "C" {
 #define EKF7_OK 0 // Done Successfully.
 #define EKF7_ER 1 // Error
 
-#define EKF7_COV_UPDATE 1
-#define EKF7_COV_NOT_UPDATE 0
-
-typedef struct matrix {
-  byte dim; // dimision of the matrix, dim = m<<4 + n
-  byte sps; // start position in the_space
-} M;
-
-void ekf7_set_state(FTYPE bx, FTYPE by, FTYPE bz, FTYPE qw, FTYPE qx, FTYPE qy,
-                    FTYPE qz);
-
 void ekf7_init(void);
 
 void ekf7_set_Propagation_Noise(FTYPE Wbx, FTYPE Wby, FTYPE Wbz, FTYPE Wq1,
@@ -31,11 +20,13 @@ void ekf7_set_Propagation_Noise(FTYPE Wbx, FTYPE Wby, FTYPE Wbz, FTYPE Wq1,
 
 void ekf7_set_Observation_Noise(FTYPE Vq1, FTYPE Vq2, FTYPE Vq3, FTYPE Vq4);
 
+void ekf7_set_state(FTYPE bx, FTYPE by, FTYPE bz, FTYPE qw, FTYPE qx, FTYPE qy,
+                    FTYPE qz);
+
 /* x_{k+1|k} = f(x_k)
  * P_{k+1|k} = F*P_k*F^T + W
  */
-void ekf7_predict(FTYPE dt, FTYPE wx, FTYPE wy, FTYPE wz,
-                  char covar_update_flag);
+void ekf7_predict(FTYPE dt, FTYPE wx, FTYPE wy, FTYPE wz);
 
 /* K = P*H^T*(H*P*H^T + V)^(-1)
  * x_{k+1} = x_{x+1|x} + K(y - H*x_{K+1|k})
@@ -46,6 +37,8 @@ void ekf7_update(FTYPE qw, FTYPE qx, FTYPE qy, FTYPE qz);
 /*
  */
 void ekf7_covariance_predict(FTYPE dt);
+
+void ekf7_covariance_predict_v2(FTYPE dt);
 
 /*
  */

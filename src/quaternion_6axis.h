@@ -8,17 +8,17 @@ extern "C" {
 #include "math.h"
 #include "tiny_util.h"
 
-void set_reference_QE6(FTYPE eax, FTYPE eay, FTYPE eaz);
+void qe6_set_reference(FTYPE eax, FTYPE eay, FTYPE eaz);
 
-void set_measurement_QE6(FTYPE bax, FTYPE bay, FTYPE baz);
+void qe6_set_measurement(FTYPE bax, FTYPE bay, FTYPE baz);
 
-void quaternion_init_QE6(void);
+void qe6_quaternion_init(void);
 
-void quaternion_update_QE6(void);
+void qe6_quaternion_update(void);
 
-void get_qk_QE6(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz);
+void qe6_get_qk(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz);
 
-void get_rpy_QE6(FTYPE *roll, FTYPE *pitch, FTYPE *yaw);
+void qe6_get_rpy(FTYPE *roll, FTYPE *pitch, FTYPE *yaw);
 
 #ifdef __cplusplus
 }

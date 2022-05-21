@@ -11,6 +11,11 @@ extern "C" {
 
 typedef unsigned char byte;
 
+typedef struct matrix {
+  byte dim; // dimision of the matrix, dim = m<<4 + n
+  byte sps; // start position in the_space
+} M;
+
 // some simple math function
 int imin(int a, int b);
 

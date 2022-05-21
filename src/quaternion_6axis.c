@@ -8,13 +8,6 @@
 
 #include "quaternion_6axis.h"
 
-// Important types used here.
-typedef unsigned char byte;
-typedef struct matrix {
-  byte dim; // dimision of the matrix, dim = m<<4 + n
-  byte sps; // start position in thqe6_e_space
-} M;
-
 // Definition of important constant.
 // Should NOT be modified.
 #define SPACE_SIZE 45 // maximum matrix element number
@@ -32,11 +25,11 @@ typedef struct matrix {
 // The (x, y)th element for NOT symmetric matrix of m rows * n columns, starting
 // with (0, 0). With O2 Opt., the add/mul. part in the index should be replaced
 // by const. (Hopefully?)
-#define MAT(mat, x, y) qe6_spacqe6_e_[mat.sps + y + x * (mat.dim & 0x0f)]
+#define MAT(mat, x, y) qe6_space_[mat.sps + y + x * (mat.dim & 0x0f)]
 // Get the (x, y)th element of a symmetric matrix.
 #define SYM(mat, x, y)                                                         \
-  qe6_spacqe6_e_[mat.sps + imax(x, y) + imin(x, y) * (mat.dim & 0x0f) -        \
-                 (imin(x, y) * imin(x, y) + imin(x, y)) / 2]
+  qe6_space_[mat.sps + imax(x, y) + imin(x, y) * (mat.dim & 0x0f) -            \
+             (imin(x, y) * imin(x, y) + imin(x, y)) / 2]
 // Get how much a NOT symmetric matrix take to store data
 #define OCU(mat) (mat.dim >> 4) * (mat.dim & 0x0f)
 // Get how much a symmetric matrix take to store data
@@ -44,7 +37,7 @@ typedef struct matrix {
   0.5 * ((mat.dim >> 4) * ((mat.dim & 0x0f) - 1)) + (mat.dim >> 4)
 
 // Every element of matrix in the quaternion estimator will be stored here.
-FTYPE qe6_spacqe6_e_[SPACE_SIZE];
+FTYPE qe6_space_[SPACE_SIZE];
 byte qe6_spscnt_;
 
 // Matrix used for Quaternion estimation
@@ -59,22 +52,22 @@ FTYPE qe6_bax_, qe6_bay_, qe6_baz_;
 // Quaternion Estimation
 FTYPE qe6_qw_, qe6_qx_, qe6_qy_, qe6_qz_;
 
-void set_reference_QE6(FTYPE eax, FTYPE eay, FTYPE eaz) {
+void qe6_set_reference(FTYPE eax, FTYPE eay, FTYPE eaz) {
   qe6_eax_ = eax;
   qe6_eay_ = eay;
   qe6_eaz_ = eaz;
 }
 
-void set_measurement_QE6(FTYPE bax, FTYPE bay, FTYPE baz) {
+void qe6_set_measurement(FTYPE bax, FTYPE bay, FTYPE baz) {
   qe6_bax_ = bax;
   qe6_bay_ = bay;
   qe6_baz_ = baz;
 }
 
-void quaternion_init_QE6(void) {
+void qe6_quaternion_init(void) {
   // Fill all elements with 0
   for (int i = 0; i < SPACE_SIZE; i++) {
-    qe6_spacqe6_e_[i] = 0;
+    qe6_space_[i] = 0;
   }
   // Initialize all structures.
   // Jacobian, non sysmmetric 6*4
@@ -101,7 +94,7 @@ void quaternion_init_QE6(void) {
   qe6_qz_ = 0;
 }
 
-void set_qe6_J_QE6(void) {
+void qe6_set_J(void) {
   // qe6_qz_ must be 0
   qe6_qz_ = 0;
   // Set J by reference vectors and quaternions
@@ -136,7 +129,7 @@ void set_qe6_J_QE6(void) {
   }
 }
 
-void qe6_PD_invert_QE6(void) {
+void qe6_PD_invert(void) {
   SYM(qe6_PD_, 0, 0) = 1.0f / SYM(qe6_PD_, 0, 0);
   for (int i = 0; i < NUM_QT - 1; i++) {
     // w^T = -inv(A)*u^T
@@ -169,7 +162,7 @@ void qe6_PD_invert_QE6(void) {
   return;
 }
 
-void get_error_QE6(void) {
+void qe6_get_error(void) {
   FTYPE R11 =
       pow(qe6_qw_, 2) + pow(qe6_qx_, 2) - pow(qe6_qy_, 2) - pow(qe6_qz_, 2);
   FTYPE R12 = 2 * (qe6_qx_ * qe6_qy_ - qe6_qw_ * qe6_qz_);
@@ -191,10 +184,10 @@ void get_error_QE6(void) {
       qe6_eaz_ - R31 * qe6_bax_ - R32 * qe6_bay_ - R33 * qe6_baz_;
 }
 
-void quaternion_update_QE6(void) {
-  set_qe6_J_QE6();
-  qe6_PD_invert_QE6();
-  get_error_QE6();
+void qe6_quaternion_update(void) {
+  qe6_set_J();
+  qe6_PD_invert();
+  qe6_get_error();
   // get dq = PD*J^T*e
   for (int i = 0; i < NUM_QT; i++) {
     // dq_i
@@ -213,17 +206,17 @@ void quaternion_update_QE6(void) {
   qe6_qz_ = 0;
 }
 
-void get_qk_QE6(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz) {
+void qe6_get_qk(FTYPE *qw, FTYPE *qx, FTYPE *qy, FTYPE *qz) {
   *qw = qe6_qw_;
   *qx = qe6_qx_;
   *qy = qe6_qy_;
   *qz = qe6_qz_;
 }
 
-void get_rpy_QE6(FTYPE *roll, FTYPE *pitch, FTYPE *yaw) {
+void qe6_get_rpy(FTYPE *roll, FTYPE *pitch, FTYPE *yaw) {
   *roll = atan2(2 * (qe6_qw_ * qe6_qx_ + qe6_qy_ * qe6_qz_),
-               1 - 2 * (qe6_qx_ * qe6_qx_ + qe6_qy_ * qe6_qy_));
+                1 - 2 * (qe6_qx_ * qe6_qx_ + qe6_qy_ * qe6_qy_));
   *pitch = asin(2 * (qe6_qw_ * qe6_qy_ - qe6_qz_ * qe6_qx_));
   *yaw = atan2(2 * (qe6_qw_ * qe6_qz_ + qe6_qx_ * qe6_qy_),
-                1 - 2 * (qe6_qy_ * qe6_qy_ + qe6_qz_ * qe6_qz_));
+               1 - 2 * (qe6_qy_ * qe6_qy_ + qe6_qz_ * qe6_qz_));
 }
